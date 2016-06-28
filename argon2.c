@@ -20,18 +20,15 @@ PHP_FUNCTION(argon2_verify)
 
 
 // Zend Argument information
-ZEND_BEGIN_ARG_INFO_EX(arginfo_argon2_public, 0, 0, 1)
-	ZEND_ARG_INFO(0, secret)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_argon2_hash, 0, 0, 1)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_argon2_shared, 0, 0, 1)
-	ZEND_ARG_INFO(0, secret)
-	ZEND_ARG_INFO(0, public)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_argon2_verify, 0, 0, 1)
 ZEND_END_ARG_INFO()
 
 const zend_function_entry argon2_functions[] = {
-	PHP_FE(argon2_public, arginfo_argon2_public)
-	PHP_FE(argon2_shared, arginfo_argon2_shared)
+	PHP_FE(argon2_hash, arginfo_argon2_hash)
+	PHP_FE(argon2_verify, arginfo_argon2_verify)
 	PHP_FE_END
 };
 
