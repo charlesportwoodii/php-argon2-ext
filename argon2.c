@@ -80,6 +80,8 @@ static int generate_salt(size_t length, char *ret)
 		efree(result);
 		return FAILURE;
 	}
+
+	printf("%s", result);
 	memcpy(ret, result, length);
 	efree(result);
 	efree(buffer);
@@ -95,29 +97,30 @@ static int generate_salt(size_t length, char *ret)
  * @param array options
  *  @default: [
  *  	         m_cost: 3,
- *				 t_cost: 1<<16
+ *				 t_cost: 1<<16,
+ *				 threads: 1,
+ *				 lanes: 1
  *            ]
  * @usage: argon2_hash(string $password [, PASSWORD_ARGON2_D|PASSWORD_ARGON2_I ] [, array $options])
  */
 PHP_FUNCTION(argon2_hash)
 {
 	// Argon2 Options
-	uint32_t outlen;
-	uint32_t t_cost = 3; 		// 3 
-    uint32_t m_cost = (1<<16);	// 64 MiB
+	uint32_t t_cost = 3; 			// 3 
+    uint32_t m_cost = (1<<16);	 	// 64 MiB
 	uint32_t lanes = 1;
 	uint32_t threads = 1;
 	uint32_t out_len = 32;
-	argon2_type type = Argon2_i;
-
-	unsigned char* out = malloc(out_len + 1);
-	char *password;
-	char *salt;
-	char *encoded;
+	argon2_type type = Argon2_i; 	// Default to Argon2_i
 
 	size_t password_len;
-	size_t salt_len;
+	size_t salt_len = 16;		    // 16 Byte salt
 	size_t encoded_len;
+
+	char* out = malloc(out_len + 1);
+	char *salt = malloc(salt_len + 1);
+	char *password;
+	char *encoded;
 
 	int result;
 	long argon2_type = -1;
@@ -140,6 +143,21 @@ PHP_FUNCTION(argon2_hash)
 	// Determine the t_cost if it was passed via options
 	if (options && (option_buffer = zend_hash_str_find(options, "t_cost", sizeof("t_cost")-1)) != NULL) {
 		t_cost = zval_get_long(option_buffer);
+	}
+
+	// Determine the t_cost if it was passed via options
+	if (options && (option_buffer = zend_hash_str_find(options, "t_cost", sizeof("t_cost")-1)) != NULL) {
+		t_cost = zval_get_long(option_buffer);
+	}
+
+	// Determine the lanes if it was passed via options
+	if (options && (option_buffer = zend_hash_str_find(options, "lanes", sizeof("lanes")-1)) != NULL) {
+		lanes = zval_get_long(option_buffer);
+	}
+
+	// Determine the threads if it was passed via options
+	if (options && (option_buffer = zend_hash_str_find(options, "threads", sizeof("threads")-1)) != NULL) {
+		threads = zval_get_long(option_buffer);
 	}
 
 	// Sanity check the password for non-zero length
@@ -172,7 +190,6 @@ PHP_FUNCTION(argon2_hash)
 		out_len
 	);
 
-	/**
 	// Generate the argon2_hash
 	result = argon2_hash(
 		t_cost,
@@ -196,7 +213,6 @@ PHP_FUNCTION(argon2_hash)
 	}
 
 	RETURN_STRINGL(encoded, encoded_len);
-	**/
 }
 
 /**

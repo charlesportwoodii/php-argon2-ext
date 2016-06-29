@@ -3,33 +3,59 @@ This PHP7 extension provides a simplified interface to the [Argon2](https://gith
 
 > Note this is extension is only compatible with PHP7+. Support for lower versions of PHP will not be considered.
 
-## Design
+## Design Goals
 
-## Compilation
+## Building
 
-```
-git clone https://github.com/charlesportwoodii/php-argon2-ext
+```bash
+# Clone the extension and the Argon2 Submodule
+git clone --recursive https://github.com/charlesportwoodii/php-argon2-ext
 cd php-argon2-ext
+
+# Build the Argon2 library
+cd ext/argon2
+make
+cd ../..
+
+# Build the extension
 phpize
 ./configure
 make
-make install
+```
 
+### Installation
+
+Once you have compiled the extension, you can install it via `make install`, adding the extension to your `php.ini` file or to a file in your loaded extensions directory, 
+
+```bash
+$ make install
 # Load the extension to your php.ini/php conf.d
 # echo "extension=argon2.so" > /path/to/php.ini
 ```
+
+### Testing
+
+Extension is tested through `make test`. You are strongly encouraged to run the tests to make sure everything was built correctly. A summary of the tests will be outlined
+
+```bash
+$ make test
+```
+
+If `make test` encounters an error, please provide a copy of the error report as a Github issue.
 
 ## Usage
 
 This extension provides the following methods for generating and verifying hashes.
 
-```
+```php
 argon2_hash();
 ```
 
-```
+```php
 argon2_verify();
 ```
+
+## Reporting a Bug
 
 ## Frequently Asked Questions
 
