@@ -18,9 +18,15 @@ if test "$PHP_ARGON2" != "no"; then
     AC_MSG_ERROR([Please ensure the argon2 headers and static library are installed])
   fi
 
+  LIBS="$LIBS -lpthread -lrt -ldl"
+  LDFLAGS="$LDFLAGS -pthread -lrt -ldl"
+  
   PHP_ADD_INCLUDE($ARGON2_DIR/include)
   PHP_ADD_INCLUDE($ARGON2_DIR)
+  PHP_ADD_LIBRARY(pthread, ARGON2_SHARED_DIR)
 
+  PHP_SUBST(ARGON2_SHARED_LIBADD) 
+  
   LIBNAME=argon2
   LIBSYMBOL=argon2_hash
 
@@ -31,10 +37,9 @@ if test "$PHP_ARGON2" != "no"; then
   ],[
     AC_MSG_ERROR([Problem with libargon2.(a|so). Please check config.log for more information.])
   ],[
-    -Bstatic -L$ARGON2_DIR -lrt -ldl -lpthread
+    -L$ARGON2_DIR -lrt -ldl -lpthread
   ])
   
-
   PHP_SUBST(ARGON2_SHARED_LIBADD) 
   PHP_NEW_EXTENSION(argon2, argon2.c, $ext_shared)
 fi

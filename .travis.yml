@@ -1,0 +1,16 @@
+sudo: false
+
+language: php
+php:
+  - 7
+
+notifications:
+  email:
+    on_success: change
+    on_failure: change
+
+script:
+  - cd ext/argon2 && CFLAGS="-fPIC" make test &&  rm libargon2.so && cd ../..
+  - phpize
+  - ./configure --with-argon2
+  - echo "n" | make test
