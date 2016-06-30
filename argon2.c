@@ -102,7 +102,7 @@ static int generate_salt(size_t length, char *ret)
 PHP_FUNCTION(argon2_hash)
 {
 	// Argon2 Options
-	uint32_t t_cost = 3; 			// 3 
+	uint32_t t_cost = 2; 			// 3 
     uint32_t m_cost = (1<<16);	 	// 64 MiB
 	uint32_t lanes = 1;
 	uint32_t threads = 1;
