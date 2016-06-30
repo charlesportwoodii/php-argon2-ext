@@ -1,6 +1,6 @@
 # PHP Argon2 Extension
 
-[![TravisCI](https://img.shields.io/travis/charlesportwoodii/php-argon2-ext.svg?style=flat-square "TravisCI")](https://travis-ci.org/charlesportwoodii//php-argon2-ext)
+[![TravisCI](https://img.shields.io/travis/charlesportwoodii/php-argon2-ext.svg?style=flat-square "TravisCI")](https://travis-ci.org/charlesportwoodii/php-argon2-ext)
 [![License](https://img.shields.io/badge/license-BSD-orange.svg?style=flat-square "License")](https://github.com/charlesportwoodii//php-argon2-ext/blob/master/LICENSE.md)
 
 
