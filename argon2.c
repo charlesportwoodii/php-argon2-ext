@@ -56,7 +56,6 @@ static int generate_salt(size_t length, char *ret)
 	char *result;
 
 	if (length > (INT_MAX / 3)) {
-		php_error_docref(NULL, E_WARNING, "Length is too large to safely generate");
 		return FAILURE;
 	}
 
@@ -65,14 +64,12 @@ static int generate_salt(size_t length, char *ret)
 	buffer = (char *) safe_emalloc(raw_length, 1, 1);
 
 	if (FAILURE == php_random_bytes_silent(buffer, raw_length)) {
-		php_error_docref(NULL, E_WARNING, "Unable to generate salt");
 		efree(buffer);
 		return FAILURE;
 	}
 
 	result = safe_emalloc(length, 1, 1);
 	if (salt_to_base64(buffer, raw_length, length, result) == FAILURE) {
-		php_error_docref(NULL, E_WARNING, "Generated salt too short");
 		efree(buffer);
 		efree(result);
 		return FAILURE;
@@ -102,7 +99,7 @@ static int generate_salt(size_t length, char *ret)
 PHP_FUNCTION(argon2_hash)
 {
 	// Argon2 Options
-	uint32_t t_cost = 2; 			// 3 
+	uint32_t t_cost = 3; 			// 3 
     uint32_t m_cost = (1<<16);	 	// 64 MiB
 	uint32_t lanes = 1;
 	uint32_t threads = 1;
@@ -180,6 +177,7 @@ PHP_FUNCTION(argon2_hash)
 	// Generate a salt using the same algorithm used by password_hash()
 	if (generate_salt(salt_len, salt) == FAILURE) {
 		efree(salt);
+		zend_throw_exception(spl_ce_RuntimeException, "Failed to securely generate a salt", 0 TSRMLS_CC);
 		// Return false if a hash can't be generated
 		RETURN_FALSE;
 	}
@@ -216,7 +214,6 @@ PHP_FUNCTION(argon2_hash)
 	// If the hash wasn't generated, throw an exception
 	if (result != ARGON2_OK) {
 		zend_throw_exception(spl_ce_RuntimeException, argon2_error_message(result), 0 TSRMLS_CC);
-		RETURN_FALSE;
 	}
 
 	// Return the generated encoded string
