@@ -17,12 +17,16 @@ cd php-argon2-ext
 
 # Build the Argon2 library
 cd ext/argon2
-make
+CFLAGS="-fPIC" make
+make test
+
+# Remove the argon2 shared library to force Argon2 to be compiled statically into the extension
+rm libargon2.so
 cd ../..
 
 # Build the extension
 phpize
-./configure
+./configure --with-argon2
 make
 ```
 
