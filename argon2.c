@@ -2,10 +2,7 @@
 #include "config.h"
 #endif
 
-
 #include "php_argon2.h"
-
-
 
 /**
  * Converts a salt to a base64 encoded value
@@ -81,7 +78,6 @@ static int generate_salt(size_t length, char *ret)
 		return FAILURE;
 	}
 
-	printf("%s", result);
 	memcpy(ret, result, length);
 	efree(result);
 	efree(buffer);
@@ -113,8 +109,8 @@ PHP_FUNCTION(argon2_hash)
 	uint32_t out_len = 32;
 	argon2_type type = Argon2_i; 	// Default to Argon2_i
 
-	size_t password_len;
 	size_t salt_len = 16;		    // 16 Byte salt
+	size_t password_len;
 	size_t encoded_len;
 
 	char* out = malloc(out_len + 1);
@@ -144,12 +140,7 @@ PHP_FUNCTION(argon2_hash)
 	if (options && (option_buffer = zend_hash_str_find(options, "t_cost", sizeof("t_cost")-1)) != NULL) {
 		t_cost = zval_get_long(option_buffer);
 	}
-
-	// Determine the t_cost if it was passed via options
-	if (options && (option_buffer = zend_hash_str_find(options, "t_cost", sizeof("t_cost")-1)) != NULL) {
-		t_cost = zval_get_long(option_buffer);
-	}
-
+	
 	// Determine the lanes if it was passed via options
 	if (options && (option_buffer = zend_hash_str_find(options, "lanes", sizeof("lanes")-1)) != NULL) {
 		lanes = zval_get_long(option_buffer);
@@ -169,7 +160,7 @@ PHP_FUNCTION(argon2_hash)
 	if (argon2_type == Argon2_i || argon2_type == -1) {
 		type = Argon2_i;
 	} else if (argon2_type == Argon2_d) {
-		type == Argon2_d;
+		type = Argon2_d;
 	} else {
 		zend_throw_exception(spl_ce_InvalidArgumentException, "Algorithm must be one of `PASSWORD_ARGON2_D, PASSWORD_ARGON2_I`", 0 TSRMLS_CC);
 	}
@@ -190,6 +181,9 @@ PHP_FUNCTION(argon2_hash)
 		out_len
 	);
 
+	// Allocate the size of encoded
+	encoded = malloc(encoded_len + 1);
+
 	// Generate the argon2_hash
 	result = argon2_hash(
 		t_cost,
@@ -207,19 +201,57 @@ PHP_FUNCTION(argon2_hash)
 		ARGON2_VERSION_NUMBER
 	);
 
-	// If the hash wasn't generated, return false
+	// If the hash wasn't generated, throw an exception
 	if (result != ARGON2_OK) {
+		zend_throw_exception(spl_ce_RuntimeException, argon2_error_message(result), 0 TSRMLS_CC);
 		RETURN_FALSE;
 	}
 
+	// Return the generated encoded string
 	RETURN_STRINGL(encoded, encoded_len);
 }
 
 /**
- * @usage: argon2_verify(string $password [, PASSWORD_ARGON2_D|PASSWORD_ARGON2_I ])
+ * Determines if a given password matches a given hash
+ * @param string password
+ * @param string hash
+ * @usage: argon2_verify(string $password, string $hash)
  */
 PHP_FUNCTION(argon2_verify)
 {
+	// Argon2 Options
+	argon2_type type = Argon2_i; 	// Default to Argon2_i
+
+	size_t password_len;
+	size_t encoded_len;
+
+	char *password;
+	char *encoded;
+
+	int result;
+
+	ZEND_PARSE_PARAMETERS_START(2, 2)
+		Z_PARAM_STRING(password, password_len)
+		Z_PARAM_STRING(encoded, encoded_len)
+	ZEND_PARSE_PARAMETERS_END();
+
+	// Determine which algorithm is used
+	if (strstr(encoded, "argon2d")) {
+		type = Argon2_d;
+	} else if (strstr(encoded, "argon2i")) {
+		type = Argon2_i;
+	} else {
+		zend_throw_exception(spl_ce_InvalidArgumentException, "Invalid Argon2 hash", 0 TSRMLS_CC);
+	}
+
+	result = argon2_verify(encoded, password, password_len, type);
+
+	// If verification failed just return false
+	if (result != ARGON2_OK) {
+		RETURN_FALSE;
+	}
+
+	RETURN_TRUE;
 }
 
 // Zend Argument information
@@ -244,8 +276,8 @@ const zend_function_entry argon2_functions[] = {
 PHP_MINIT_FUNCTION(argon2)
 {
 	// Create contants for ARGON2
-	REGISTER_LONG_CONSTANT("PASSWORD_ARGON2_D", Argon2_d, CONST_CS | CONST_PERSISTENT);
-	REGISTER_LONG_CONSTANT("PASSWORD_ARGON2_I", Argon2_i, CONST_CS | CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("PASSWORD_ARGON2D", Argon2_d, CONST_CS | CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("PASSWORD_ARGON2I", Argon2_i, CONST_CS | CONST_PERSISTENT);
 
 	return SUCCESS;
 }

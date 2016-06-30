@@ -27,14 +27,14 @@ if test "$PHP_ARGON2" != "no"; then
   PHP_CHECK_LIBRARY($LIBNAME,$LIBSYMBOL,
   [
     PHP_ADD_LIBRARY_WITH_PATH($LIBNAME, $ARGON2_DIR, ARGON2_SHARED_LIBADD)
-    PHP_SUBST(ARGON2_SHARED_LIBADD)
     AC_DEFINE(HAVE_ARGON2LIB,1,[ ])
   ],[
     AC_MSG_ERROR([Problem with libargon2.(a|so). Please check config.log for more information.])
   ],[
-    -L$ARGON2_DIR -lrt -ldl -lpthread
+    -Bstatic -L$ARGON2_DIR -lrt -ldl -lpthread
   ])
   
-  PHP_SUBST(ARGON2_SHARED_LIBADD)  
+
+  PHP_SUBST(ARGON2_SHARED_LIBADD) 
   PHP_NEW_EXTENSION(argon2, argon2.c, $ext_shared)
 fi
