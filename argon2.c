@@ -136,14 +136,26 @@ PHP_FUNCTION(argon2_hash)
 		m_cost = zval_get_long(option_buffer);
 	}
 
+	if (m_cost > ARGON2_MAX_MEMORY) {
+		zend_throw_exception(spl_ce_InvalidArgumentException, "`m_cost` exceeds maximum memory", 0 TSRMLS_CC);
+	}
+
 	// Determine the t_cost if it was passed via options
 	if (options && (option_buffer = zend_hash_str_find(options, "t_cost", sizeof("t_cost")-1)) != NULL) {
 		t_cost = zval_get_long(option_buffer);
+	}
+
+	if (t_cost > ARGON2_MAX_TIME) {
+		zend_throw_exception(spl_ce_InvalidArgumentException, "`t_cost` exceeds maximum time", 0 TSRMLS_CC);
 	}
 	
 	// Determine the lanes if it was passed via options
 	if (options && (option_buffer = zend_hash_str_find(options, "lanes", sizeof("lanes")-1)) != NULL) {
 		lanes = zval_get_long(option_buffer);
+	}
+
+	if (lanes > ARGON2_MAX_LANES || lanes == 0) {
+		zend_throw_exception(spl_ce_InvalidArgumentException, "Invalid numeric input for `lanes`", 0 TSRMLS_CC);
 	}
 
 	// Determine the threads if it was passed via options

@@ -13,4 +13,4 @@ script:
   - cd ext/argon2 && CFLAGS="-fPIC" make && make test && rm libargon2.so && cd ../..
   - phpize
   - ./configure --with-argon2
-  - echo "n" | make test
+  - NO_INTERACTION=true make test

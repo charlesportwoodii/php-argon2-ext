@@ -1,4 +1,5 @@
 .deps
+php_test_results_*
 .libs/
 Makefile
 Makefile.fragments
