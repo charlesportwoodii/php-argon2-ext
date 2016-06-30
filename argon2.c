@@ -308,7 +308,7 @@ zend_module_entry argon2_module_entry = {
 	NULL,
 	NULL,
 	PHP_MINFO(argon2),
-	"1.0",
+	"1.0.0",
 	STANDARD_MODULE_PROPERTIES
 };
 
