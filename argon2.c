@@ -21,6 +21,7 @@ static int salt_to_base64(const char *str, const size_t str_len, const size_t ou
 	if ((int) str_len < 0) {
 		return FAILURE;
 	}
+
 	buffer = php_base64_encode((unsigned char*) str, str_len);
 	if (ZSTR_LEN(buffer) < out_len) {
 		/* Too short of an encoded string generated */
@@ -49,7 +50,7 @@ static int salt_to_base64(const char *str, const size_t str_len, const size_t ou
  * @see https://github.com/php/php-src/blob/1c295d4a9ac78fcc2f77d6695987598bb7abcb83/LICENSE    
  * @return integer
  */
-static int generate_salt(size_t length, char *ret)
+static int php_password_make_salt(size_t length, char *ret)
 {
 	size_t raw_length;
 	char *buffer;
@@ -175,11 +176,9 @@ PHP_FUNCTION(argon2_hash)
 	}
 
 	// Generate a salt using the same algorithm used by password_hash()
-	if (generate_salt(salt_len, salt) == FAILURE) {
+	if (php_password_make_salt(salt_len, salt) == FAILURE) {
 		efree(salt);
 		zend_throw_exception(spl_ce_RuntimeException, "Failed to securely generate a salt", 0 TSRMLS_CC);
-		// Return false if a hash can't be generated
-		RETURN_FALSE;
 	}
 
 	// Determine the encoded length
