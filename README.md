@@ -79,7 +79,7 @@ options = [
 ]
 ```
 
-> This function follows the same design principles of `password_hash()`, in that a salt will be generated on your behalf. This method does not provide you with a way to provide your own salt.
+> This function follows the same design principles of `password_hash()`, in that a salt will be generated on your behalf. This method does not provide you with a way to provide your own salt. The salt generated uses the native PHP function `php_password_make_salt`, which is the same method used to generate salts for `password_hash()`.
 
 
 The `$algorithm` can be changed by passing in either `PASSWORD_ARGON2I` or `PASSWORD_ARGON2D`. If the algorithm is invalid, an `InvalidArguementException` will be raised.
