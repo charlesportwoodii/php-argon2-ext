@@ -94,7 +94,7 @@ If no errors occur, an argon2 encoded hash string will be returned.
 
 #### Example Hash
 ```php
-$argon2i$v=19$m=65536,t=2,p=1$OWNRdEVsbUNBLmZWQkt1OQ$gLm1jIYzXN1EJ/CJLi/O/NpZQwYcL/LDL7IYkdf8CYs nd
+$argon2i$v=19$m=65536,t=3,p=1$aUEvQlU2NTRwcHhVS0hqMg$+5h0P5YlWCJDKyZknJ0sAyqQtZjhuP1Bkw/E2It4IcE
 ```
 
 ### Validating Hashes
