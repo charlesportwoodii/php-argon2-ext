@@ -87,7 +87,7 @@ static int php_password_make_salt(size_t length, char *ret)
  * Hashes a password with Argon2
  * @param string password
  * @param integer (constant) algorithm
- * 	@default: PASSWORD_ARGON2_I
+ *  @default: PASSWORD_ARGON2_I
  * @param array options
  *  @default: [
  *  	         m_cost: 3,
@@ -101,7 +101,7 @@ PHP_FUNCTION(argon2_hash)
 {
 	// Argon2 Options
 	uint32_t t_cost = 3; 			// 3 
-    uint32_t m_cost = (1<<16);	 	// 64 MiB
+	uint32_t m_cost = (1<<16);	 	// 64 MiB
 	uint32_t lanes = 1;
 	uint32_t threads = 1;
 	uint32_t out_len = 32;
