@@ -104,10 +104,11 @@ PHP_FUNCTION(argon2_hash)
 	size_t password_len;
 	size_t encoded_len;
 
-	char* out = emalloc(out_len + 1);
-	char *salt = emalloc(salt_len + 1);
+	char *out;
+	char *salt;
 	char *password;
 	char *encoded;
+	char *encoded_result;
 
 	int result;
 	long argon2_type = -1;
@@ -168,9 +169,10 @@ PHP_FUNCTION(argon2_hash)
 		zend_throw_exception(spl_ce_InvalidArgumentException, "Algorithm must be one of `PASSWORD_ARGON2_D, PASSWORD_ARGON2_I`", 0 TSRMLS_CC);
 	}
 
+	salt  = emalloc(salt_len + 1);
+
 	// Generate a salt using the same algorithm used by password_hash()
 	if (php_password_make_salt(salt_len, salt) == FAILURE) {
-		efree(out);
 		efree(salt);
 		zend_throw_exception(spl_ce_RuntimeException, "Failed to securely generate a salt", 0 TSRMLS_CC);
 	}
@@ -184,8 +186,9 @@ PHP_FUNCTION(argon2_hash)
 		out_len
 	);
 
-	// Allocate the size of encoded
+	// Allocate the size of encoded, and out
 	encoded = emalloc(encoded_len + 1);
+	out = emalloc(out_len + 1);
 
 	// Generate the argon2_hash
 	result = argon2_hash(
@@ -204,19 +207,21 @@ PHP_FUNCTION(argon2_hash)
 		ARGON2_VERSION_NUMBER
 	);
 
-	// If the hash wasn't generated, throw an exception
-	if (result != ARGON2_OK) {
-		efree(out);
-		efree(salt);
-		efree(encoded);
-		zend_throw_exception(spl_ce_RuntimeException, argon2_error_message(result), 0 TSRMLS_CC);
-	}
+	// Convert encoded to zend_string for memory dealloc
+	zend_string *ret = zend_string_init(encoded, encoded_len, 0);
 
+	// Free allocated memory
 	efree(out);
 	efree(salt);
-	
+	efree(encoded);
+
+	// If the hash wasn't generated, throw an exception
+	if (result != ARGON2_OK) {
+		zend_throw_exception(spl_ce_RuntimeException, argon2_error_message(result), 0 TSRMLS_CC);
+	}
+		
 	// Return the generated encoded string
-	RETURN_STRINGL(encoded, encoded_len);
+	RETURN_STR(ret);
 }
 /* }}} */
 
@@ -243,7 +248,7 @@ PHP_FUNCTION(argon2_verify)
 		Z_PARAM_STRING(password, password_len)
 		Z_PARAM_STRING(encoded, encoded_len)
 	ZEND_PARSE_PARAMETERS_END();
-
+ 
 	// Determine which algorithm is used
 	if (strstr(encoded, "argon2d")) {
 		type = Argon2_d;
