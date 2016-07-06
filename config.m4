@@ -41,5 +41,5 @@ if test "$PHP_ARGON2" != "no"; then
   ])
   
   PHP_SUBST(ARGON2_SHARED_LIBADD) 
-  PHP_NEW_EXTENSION(argon2, argon2.c, $ext_shared)
+  PHP_NEW_EXTENSION(argon2, argon2.c, $ext_shared,, -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1)
 fi

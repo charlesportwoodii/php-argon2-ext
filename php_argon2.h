@@ -1,16 +1,17 @@
-#include "php.h"
-#include <stdio.h>
-#include <string.h>
-#include "ext/standard/info.h"
-#include "zend_exceptions.h"
-#include "ext/spl/spl_exceptions.h"
-#include "ext/standard/base64.h"
-#include "ext/standard/php_random.h"
-#include "ext/standard/php_rand.h"
-
-#include "ext/argon2/include/argon2.h"
-
-extern zend_module_entry argon2_module_entry;
+#ifndef PHP_ARGON2_H
+#define PHP_ARGON2_H
 
 #define argon2_module_ptr &argon2_module_entry
 #define phpext_argon2_ptr argon2_module_ptr
+
+#define PHP_ARGON2_VERSION "1.0.1"
+
+#ifdef ZTS
+#include "TSRM.h"
+#endif
+
+#if defined(ZTS) && defined(COMPILE_DL_EXTNAME)
+ZEND_TSRMLS_CACHE_EXTERN()
+#endif
+
+#endif

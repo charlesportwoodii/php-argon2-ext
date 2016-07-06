@@ -2,26 +2,35 @@
 #include "config.h"
 #endif
 
+#include "php.h"
+#include "ext/standard/info.h"
+#include "zend_exceptions.h"
+#include "ext/spl/spl_exceptions.h"
+#include "ext/standard/base64.h"
+#include "ext/standard/php_random.h"
+
+#include "ext/argon2/include/argon2.h"
 #include "php_argon2.h"
 
-/**
- * Converts a salt to a base64 encoded value
- * @param char str
- * @param size_t str_len
- * @param size_t out_len
- * @param char ret
- * @license: Copyright (c) 1997-2016 The PHP Group
- * @see https://github.com/php/php-src/blob/1c295d4a9ac78fcc2f77d6695987598bb7abcb83/LICENSE  
- * @return integer
- */
-static int salt_to_base64(const char *str, const size_t str_len, const size_t out_len, char *ret)
+// Zend Argument information
+ZEND_BEGIN_ARG_INFO_EX(arginfo_argon2_hash, 0, 0, 3)
+	ZEND_ARG_INFO(0, password)
+	ZEND_ARG_INFO(0, algorithm)
+	ZEND_ARG_INFO(0, options)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_argon2_verify, 0, 0, 2)
+	ZEND_ARG_INFO(0, password)
+	ZEND_ARG_INFO(0, hash)
+ZEND_END_ARG_INFO()
+
+static int php_password_salt_to64(const char *str, const size_t str_len, const size_t out_len, char *ret) /* {{{ */
 {
 	size_t pos = 0;
 	zend_string *buffer;
 	if ((int) str_len < 0) {
 		return FAILURE;
 	}
-
 	buffer = php_base64_encode((unsigned char*) str, str_len);
 	if (ZSTR_LEN(buffer) < out_len) {
 		/* Too short of an encoded string generated */
@@ -41,22 +50,16 @@ static int salt_to_base64(const char *str, const size_t str_len, const size_t ou
 	zend_string_free(buffer);
 	return SUCCESS;
 }
+/* }}} */
 
-/**
- * Generates a salt value
- * @param size_t length
- * @param char *ret
- * @license: Copyright (c) 1997-2016 The PHP Group
- * @see https://github.com/php/php-src/blob/1c295d4a9ac78fcc2f77d6695987598bb7abcb83/LICENSE    
- * @return integer
- */
-static int php_password_make_salt(size_t length, char *ret)
+static int php_password_make_salt(size_t length, char *ret) /* {{{ */
 {
 	size_t raw_length;
 	char *buffer;
 	char *result;
 
 	if (length > (INT_MAX / 3)) {
+		php_error_docref(NULL, E_WARNING, "Length is too large to safely generate");
 		return FAILURE;
 	}
 
@@ -65,42 +68,32 @@ static int php_password_make_salt(size_t length, char *ret)
 	buffer = (char *) safe_emalloc(raw_length, 1, 1);
 
 	if (FAILURE == php_random_bytes_silent(buffer, raw_length)) {
+		php_error_docref(NULL, E_WARNING, "Unable to generate salt");
 		efree(buffer);
 		return FAILURE;
 	}
 
 	result = safe_emalloc(length, 1, 1);
-	if (salt_to_base64(buffer, raw_length, length, result) == FAILURE) {
+	if (php_password_salt_to64(buffer, raw_length, length, result) == FAILURE) {
+		php_error_docref(NULL, E_WARNING, "Generated salt too short");
 		efree(buffer);
 		efree(result);
 		return FAILURE;
 	}
-
 	memcpy(ret, result, length);
 	efree(result);
 	efree(buffer);
 	ret[length] = 0;
 	return SUCCESS;
 }
+/* }}} */
 
-/**
- * Hashes a password with Argon2
- * @param string password
- * @param integer (constant) algorithm
- *  @default: PASSWORD_ARGON2_I
- * @param array options
- *  @default: [
- *  	         m_cost: 3,
- *				 t_cost: 1<<16,
- *				 threads: 1,
- *				 lanes: 1
- *            ]
- * @usage: argon2_hash(string $password [, PASSWORD_ARGON2_D|PASSWORD_ARGON2_I ] [, array $options])
- */
+/* {{{ proto string argon2_hash(string password, int algorithm, array options)
+Generates an argon2 hash */
 PHP_FUNCTION(argon2_hash)
 {
 	// Argon2 Options
-	uint32_t t_cost = 3; 			// 3 
+	uint32_t t_cost = 3; 
 	uint32_t m_cost = (1<<16);	 	// 64 MiB
 	uint32_t lanes = 1;
 	uint32_t threads = 1;
@@ -111,8 +104,8 @@ PHP_FUNCTION(argon2_hash)
 	size_t password_len;
 	size_t encoded_len;
 
-	char* out = malloc(out_len + 1);
-	char *salt = malloc(salt_len + 1);
+	char* out = emalloc(out_len + 1);
+	char *salt = emalloc(salt_len + 1);
 	char *password;
 	char *encoded;
 
@@ -177,6 +170,7 @@ PHP_FUNCTION(argon2_hash)
 
 	// Generate a salt using the same algorithm used by password_hash()
 	if (php_password_make_salt(salt_len, salt) == FAILURE) {
+		efree(out);
 		efree(salt);
 		zend_throw_exception(spl_ce_RuntimeException, "Failed to securely generate a salt", 0 TSRMLS_CC);
 	}
@@ -191,7 +185,7 @@ PHP_FUNCTION(argon2_hash)
 	);
 
 	// Allocate the size of encoded
-	encoded = malloc(encoded_len + 1);
+	encoded = emalloc(encoded_len + 1);
 
 	// Generate the argon2_hash
 	result = argon2_hash(
@@ -212,12 +206,19 @@ PHP_FUNCTION(argon2_hash)
 
 	// If the hash wasn't generated, throw an exception
 	if (result != ARGON2_OK) {
+		efree(out);
+		efree(salt);
+		efree(encoded);
 		zend_throw_exception(spl_ce_RuntimeException, argon2_error_message(result), 0 TSRMLS_CC);
 	}
 
+	efree(out);
+	efree(salt);
+	
 	// Return the generated encoded string
 	RETURN_STRINGL(encoded, encoded_len);
 }
+/* }}} */
 
 /**
  * Determines if a given password matches a given hash
@@ -261,26 +262,19 @@ PHP_FUNCTION(argon2_verify)
 
 	RETURN_TRUE;
 }
+/* }}} */
 
-// Zend Argument information
-ZEND_BEGIN_ARG_INFO_EX(arginfo_argon2_hash, 0, 0, 3)
-	ZEND_ARG_INFO(0, password)
-	ZEND_ARG_INFO(0, algorithm)
-	ZEND_ARG_INFO(0, options)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_argon2_verify, 0, 0, 2)
-	ZEND_ARG_INFO(0, password)
-	ZEND_ARG_INFO(0, hash)
-ZEND_END_ARG_INFO()
-
+/* {{{ argon2_functions[]
+ */
 const zend_function_entry argon2_functions[] = {
 	PHP_FE(argon2_hash, arginfo_argon2_hash)
 	PHP_FE(argon2_verify, arginfo_argon2_verify)
 	PHP_FE_END
 };
+/* }}} */
 
-// PHP init
+/* {{{ PHP_MINIT_FUNCTION
+ */
 PHP_MINIT_FUNCTION(argon2)
 {
 	// Create contants for ARGON2
@@ -289,28 +283,47 @@ PHP_MINIT_FUNCTION(argon2)
 
 	return SUCCESS;
 }
+/* }}} */
 
-// PHP info
+/* {{{ PHP_MINFO_FUNCTION
+ */
 PHP_MINFO_FUNCTION(argon2)
 {
 	php_info_print_table_start();
 	php_info_print_table_row(2, "Argon2 support", "enabled");
 	php_info_print_table_end();
 }
+/* }}} */
 
+/* {{{ PHP_RINIT_FUNCTION
+ */
+PHP_RINIT_FUNCTION(argon2)
+{
+#if defined(COMPILE_DL_ARGON2) && defined(ZTS)
+	ZEND_TSRMLS_CACHE_UPDATE();
+#endif
+	return SUCCESS;
+}
+/* }}} */
+
+/* {{{ argon2_module_entry
+ */
 zend_module_entry argon2_module_entry = {
 	STANDARD_MODULE_HEADER,
 	"argon2",
 	argon2_functions,
 	PHP_MINIT(argon2),
 	NULL,
-	NULL,
+	PHP_RINIT(argon2),
 	NULL,
 	PHP_MINFO(argon2),
-	"1.0.0",
+	PHP_ARGON2_VERSION,
 	STANDARD_MODULE_PROPERTIES
 };
 
 #ifdef COMPILE_DL_ARGON2
+#ifdef ZTS
+ZEND_TSRMLS_CACHE_DEFINE()
+#endif
 ZEND_GET_MODULE(argon2)
 #endif
