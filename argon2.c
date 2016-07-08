@@ -169,7 +169,7 @@ PHP_FUNCTION(argon2_hash)
 		zend_throw_exception(spl_ce_InvalidArgumentException, "Algorithm must be one of `PASSWORD_ARGON2_D, PASSWORD_ARGON2_I`", 0 TSRMLS_CC);
 	}
 
-	salt  = emalloc(salt_len + 1);
+	salt = emalloc(salt_len + 1);
 
 	// Generate a salt using the same algorithm used by password_hash()
 	if (php_password_make_salt(salt_len, salt) == FAILURE) {
@@ -226,11 +226,8 @@ PHP_FUNCTION(argon2_hash)
 /* }}} */
 
 /**
- * Determines if a given password matches a given hash
- * @param string password
- * @param string hash
- * @usage: argon2_verify(string $password, string $hash)
- */
+/* {{{ proto string argon2_verify(string password, string hash)
+Generates an argon2 hash */
 PHP_FUNCTION(argon2_verify)
 {
 	// Argon2 Options
