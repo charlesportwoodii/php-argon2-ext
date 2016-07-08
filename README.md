@@ -75,7 +75,6 @@ options = [
     m_cost: 1<<16
     t_cost: 3
     threads: 1
-    lanes: 1
 ]
 ```
 

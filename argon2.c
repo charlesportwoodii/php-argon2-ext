@@ -141,19 +141,16 @@ PHP_FUNCTION(argon2_hash)
 		zend_throw_exception(spl_ce_InvalidArgumentException, "`t_cost` exceeds maximum time", 0 TSRMLS_CC);
 	}
 	
-	// Determine the lanes if it was passed via options
-	if (options && (option_buffer = zend_hash_str_find(options, "lanes", sizeof("lanes")-1)) != NULL) {
-		lanes = zval_get_long(option_buffer);
-	}
-
-	if (lanes > ARGON2_MAX_LANES || lanes == 0) {
-		zend_throw_exception(spl_ce_InvalidArgumentException, "Invalid numeric input for `lanes`", 0 TSRMLS_CC);
-	}
-
-	// Determine the threads if it was passed via options
+	// Determine the parallelism degree if it was passed via options
 	if (options && (option_buffer = zend_hash_str_find(options, "threads", sizeof("threads")-1)) != NULL) {
 		threads = zval_get_long(option_buffer);
 	}
+
+	if (threads > ARGON2_MAX_LANES || threads == 0) {
+		zend_throw_exception(spl_ce_InvalidArgumentException, "Invalid numeric input for `threads`", 0 TSRMLS_CC);
+	}
+
+	lanes = threads;
 
 	// Sanity check the password for non-zero length
 	if (password_len == 0) {
@@ -181,7 +178,7 @@ PHP_FUNCTION(argon2_hash)
 	encoded_len = argon2_encodedlen(
 		t_cost,
 		m_cost,
-		lanes,
+		threads,
 		(uint32_t)salt_len,
 		out_len
 	);
