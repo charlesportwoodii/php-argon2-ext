@@ -9,6 +9,9 @@
 #define EXT_PASSWORD_ARGON2I    Argon2_i
 #define EXT_PASSWORD_ARGON2D    Argon2_d
 #define EXT_PASSWORD_ARGON2     EXT_PASSWORD_ARGON2I
+#define ARGON2_MEMORY_COST 1<<16
+#define ARGON2_TIME_COST 3
+#define ARGON2_THREADS 1
 
 #ifdef ZTS
 #include "TSRM.h"

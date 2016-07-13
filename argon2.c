@@ -24,6 +24,10 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_argon2_verify, 0, 0, 2)
 	ZEND_ARG_INFO(0, hash)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_argon2_get_info, 0, 0, 1)
+	ZEND_ARG_INFO(0, hash)
+ZEND_END_ARG_INFO()
+
 static int php_password_salt_to64(const char *str, const size_t str_len, const size_t out_len, char *ret) /* {{{ */
 {
 	size_t pos = 0;
@@ -93,10 +97,10 @@ Generates an argon2 hash */
 PHP_FUNCTION(argon2_hash)
 {
 	// Argon2 Options
-	uint32_t t_cost = 3; 
-	uint32_t m_cost = (1<<16);
-	uint32_t lanes = 1;
-	uint32_t threads = 1;
+	uint32_t t_cost = ARGON2_TIME_COST; 
+	uint32_t m_cost = ARGON2_MEMORY_COST;
+	uint32_t threads = ARGON2_THREADS;
+	uint32_t lanes;
 	uint32_t out_len = 32;
 	argon2_type type = EXT_PASSWORD_ARGON2I;
 
@@ -222,7 +226,6 @@ PHP_FUNCTION(argon2_hash)
 }
 /* }}} */
 
-/**
 /* {{{ proto string argon2_verify(string password, string hash)
 Generates an argon2 hash */
 PHP_FUNCTION(argon2_verify)
@@ -263,11 +266,53 @@ PHP_FUNCTION(argon2_verify)
 }
 /* }}} */
 
+/* {{{ proto string argon2_get_info(string hash)
+Returns information about a argon2 hash */
+PHP_FUNCTION(argon2_get_info)
+{
+	char *hash;
+	char *algo;
+	size_t hash_len;
+
+	zval options;
+
+	ZEND_PARSE_PARAMETERS_START(1, 1)
+		Z_PARAM_STRING(hash, hash_len)
+	ZEND_PARSE_PARAMETERS_END();
+
+	if (strstr(hash, "argon2d")) {
+		algo = "argon2d";
+	} else if (strstr(hash, "argon2i")) {
+		algo = "argon2i";
+	} else {
+		zend_throw_exception(spl_ce_InvalidArgumentException, "Invalid Argon2 hash", 0 TSRMLS_CC);
+	}
+
+	array_init(&options);
+
+	zend_long v = 0;
+	zend_long m_cost = ARGON2_MEMORY_COST;
+	zend_long t_cost = ARGON2_TIME_COST;
+	zend_long threads = ARGON2_THREADS;
+
+	sscanf(hash, "$%*[argon2id]$v=%*ld$m=" ZEND_LONG_FMT ",t=" ZEND_LONG_FMT ",p=" ZEND_LONG_FMT, &m_cost, &t_cost, &threads);
+	add_assoc_long(&options, "m_cost", m_cost);
+	add_assoc_long(&options, "t_cost", t_cost);
+	add_assoc_long(&options, "threads", threads);
+
+	array_init(return_value);
+
+	add_assoc_string(return_value, "algorithm", algo);
+	add_assoc_zval(return_value, "options", &options);
+}
+/* }}} */
+
 /* {{{ argon2_functions[]
  */
 const zend_function_entry argon2_functions[] = {
 	PHP_FE(argon2_hash, arginfo_argon2_hash)
 	PHP_FE(argon2_verify, arginfo_argon2_verify)
+	PHP_FE(argon2_get_info, arginfo_argon2_get_info)
 	PHP_FE_END
 };
 /* }}} */
