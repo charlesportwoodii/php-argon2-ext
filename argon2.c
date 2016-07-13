@@ -94,13 +94,13 @@ PHP_FUNCTION(argon2_hash)
 {
 	// Argon2 Options
 	uint32_t t_cost = 3; 
-	uint32_t m_cost = (1<<16);	 	// 64 MiB
+	uint32_t m_cost = (1<<16);
 	uint32_t lanes = 1;
 	uint32_t threads = 1;
 	uint32_t out_len = 32;
-	argon2_type type = Argon2_i; 	// Default to Argon2_i
+	argon2_type type = EXT_PASSWORD_ARGON2I;
 
-	size_t salt_len = 16;		    // 16 Byte salt
+	size_t salt_len = 16;
 	size_t password_len;
 	size_t encoded_len;
 
@@ -122,14 +122,14 @@ PHP_FUNCTION(argon2_hash)
 		Z_PARAM_LONG(argon2_type)
 		Z_PARAM_ARRAY_HT(options);
 	ZEND_PARSE_PARAMETERS_END();
-	
+
 	// Determine the m_cost if it was passed via options
 	if (options && (option_buffer = zend_hash_str_find(options, "m_cost", sizeof("m_cost")-1)) != NULL) {
 		m_cost = zval_get_long(option_buffer);
 	}
 
-	if (m_cost > ARGON2_MAX_MEMORY) {
-		zend_throw_exception(spl_ce_InvalidArgumentException, "`m_cost` exceeds maximum memory", 0 TSRMLS_CC);
+	if (m_cost > ARGON2_MAX_MEMORY || m_cost == 0) {
+		zend_throw_exception(spl_ce_InvalidArgumentException, "Memory cost is not valid", 0 TSRMLS_CC);
 	}
 
 	// Determine the t_cost if it was passed via options
@@ -137,8 +137,8 @@ PHP_FUNCTION(argon2_hash)
 		t_cost = zval_get_long(option_buffer);
 	}
 
-	if (t_cost > ARGON2_MAX_TIME) {
-		zend_throw_exception(spl_ce_InvalidArgumentException, "`t_cost` exceeds maximum time", 0 TSRMLS_CC);
+	if (t_cost > ARGON2_MAX_TIME || t_cost == 0) {
+		zend_throw_exception(spl_ce_InvalidArgumentException, "Time cost is not valid", 0 TSRMLS_CC);
 	}
 	
 	// Determine the parallelism degree if it was passed via options
@@ -147,7 +147,7 @@ PHP_FUNCTION(argon2_hash)
 	}
 
 	if (threads > ARGON2_MAX_LANES || threads == 0) {
-		zend_throw_exception(spl_ce_InvalidArgumentException, "Invalid numeric input for `threads`", 0 TSRMLS_CC);
+		zend_throw_exception(spl_ce_InvalidArgumentException, "Number of threads is not valid", 0 TSRMLS_CC);
 	}
 
 	lanes = threads;
@@ -156,12 +156,12 @@ PHP_FUNCTION(argon2_hash)
 	if (password_len == 0) {
 		zend_throw_exception(spl_ce_InvalidArgumentException, "Password must be provided", 0 TSRMLS_CC);
 	}
-
+	
 	// Determine the Algorithm type
-	if (argon2_type == Argon2_i || argon2_type == -1) {
-		type = Argon2_i;
-	} else if (argon2_type == Argon2_d) {
-		type = Argon2_d;
+	if (argon2_type == EXT_PASSWORD_ARGON2I || argon2_type == -1) {
+		type = EXT_PASSWORD_ARGON2I;
+	} else if (argon2_type == EXT_PASSWORD_ARGON2D) {
+		type = EXT_PASSWORD_ARGON2D;
 	} else {
 		zend_throw_exception(spl_ce_InvalidArgumentException, "Algorithm must be one of `PASSWORD_ARGON2_D, PASSWORD_ARGON2_I`", 0 TSRMLS_CC);
 	}
@@ -228,7 +228,7 @@ Generates an argon2 hash */
 PHP_FUNCTION(argon2_verify)
 {
 	// Argon2 Options
-	argon2_type type = Argon2_i; 	// Default to Argon2_i
+	argon2_type type = EXT_PASSWORD_ARGON2I; 	// Default to Argon2_i
 
 	size_t password_len;
 	size_t encoded_len;
@@ -245,9 +245,9 @@ PHP_FUNCTION(argon2_verify)
  
 	// Determine which algorithm is used
 	if (strstr(encoded, "argon2d")) {
-		type = Argon2_d;
+		type = EXT_PASSWORD_ARGON2D;
 	} else if (strstr(encoded, "argon2i")) {
-		type = Argon2_i;
+		type = EXT_PASSWORD_ARGON2I;
 	} else {
 		zend_throw_exception(spl_ce_InvalidArgumentException, "Invalid Argon2 hash", 0 TSRMLS_CC);
 	}
@@ -276,9 +276,10 @@ const zend_function_entry argon2_functions[] = {
  */
 PHP_MINIT_FUNCTION(argon2)
 {
-	// Create contants for ARGON2
-	REGISTER_LONG_CONSTANT("PASSWORD_ARGON2D", Argon2_d, CONST_CS | CONST_PERSISTENT);
-	REGISTER_LONG_CONSTANT("PASSWORD_ARGON2I", Argon2_i, CONST_CS | CONST_PERSISTENT);
+	// Create contants for Argon2
+	REGISTER_LONG_CONSTANT("ARGON2D_PASSWORD", EXT_PASSWORD_ARGON2D, CONST_CS | CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("ARGON2I_PASSWORD", EXT_PASSWORD_ARGON2I, CONST_CS | CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("ARGON2_PASSWORD", EXT_PASSWORD_ARGON2, CONST_CS | CONST_PERSISTENT);
 
 	return SUCCESS;
 }

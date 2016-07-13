@@ -2,7 +2,7 @@
 Tests Argon2i hash and verify
 --FILE--
 <?php
-$hash = argon2_hash('password', PASSWORD_ARGON2I);
+$hash = argon2_hash('password', ARGON2I_PASSWORD);
 var_dump(argon2_verify('password', $hash));
 var_dump(argon2_verify('badpass', $hash));
 --EXPECT--

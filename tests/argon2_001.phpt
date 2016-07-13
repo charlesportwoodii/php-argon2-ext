@@ -2,8 +2,10 @@
 Tests Argon2 constants are defined
 --FILE--
 <?php
-var_dump(PASSWORD_ARGON2D);
-var_dump(PASSWORD_ARGON2I);
+var_dump(ARGON2_PASSWORD);
+var_dump(ARGON2I_PASSWORD);
+var_dump(ARGON2D_PASSWORD);
 --EXPECT--
-int(0)
 int(1)
+int(1)
+int(0)
