@@ -108,10 +108,8 @@ PHP_FUNCTION(argon2_hash)
 	size_t password_len;
 	size_t encoded_len;
 
-	char *out;
 	char *salt;
 	char *password;
-	char *encoded;
 	char *encoded_result;
 
 	int result;
@@ -175,7 +173,8 @@ PHP_FUNCTION(argon2_hash)
 	// Generate a salt using the same algorithm used by password_hash()
 	if (php_password_make_salt(salt_len, salt) == FAILURE) {
 		efree(salt);
-		zend_throw_exception(spl_ce_RuntimeException, "Failed to securely generate a salt", 0 TSRMLS_CC);
+		php_error_docref(NULL, E_WARNING, "Failed to securely generate a salt");
+		RETURN_FALSE;
 	}
 
 	// Determine the encoded length
@@ -188,8 +187,8 @@ PHP_FUNCTION(argon2_hash)
 	);
 
 	// Allocate the size of encoded, and out
-	encoded = emalloc(encoded_len + 1);
-	out = emalloc(out_len + 1);
+	zend_string *out = zend_string_alloc(out_len, 0);
+	zend_string *encoded = zend_string_alloc(encoded_len, 0);
 
 	// Generate the argon2_hash
 	result = argon2_hash(
@@ -200,16 +199,13 @@ PHP_FUNCTION(argon2_hash)
 		password_len,
 		salt,
 		salt_len,
-		out,
+		out->val,
 		out_len,
-		encoded,
+		encoded->val,
 		encoded_len,
 		type,
 		ARGON2_VERSION_NUMBER
 	);
-
-	// Convert encoded to zend_string for memory dealloc
-	zend_string *ret = zend_string_init(encoded, encoded_len, 0);
 
 	// Free allocated memory
 	efree(out);
@@ -218,11 +214,13 @@ PHP_FUNCTION(argon2_hash)
 
 	// If the hash wasn't generated, throw an exception
 	if (result != ARGON2_OK) {
-		zend_throw_exception(spl_ce_RuntimeException, argon2_error_message(result), 0 TSRMLS_CC);
+		efree(encoded);
+		php_error_docref(NULL, E_WARNING, argon2_error_message(result));
+		RETURN_FALSE;
 	}
 		
 	// Return the generated encoded string
-	RETURN_STR(ret);
+	RETURN_STR(encoded);
 }
 /* }}} */
 
@@ -252,7 +250,8 @@ PHP_FUNCTION(argon2_verify)
 	} else if (strstr(encoded, "argon2i")) {
 		type = EXT_PASSWORD_ARGON2I;
 	} else {
-		zend_throw_exception(spl_ce_InvalidArgumentException, "Invalid Argon2 hash", 0 TSRMLS_CC);
+		php_error_docref(NULL, E_WARNING, "Invalid Argon2 hash");
+		RETURN_FALSE;
 	}
 
 	result = argon2_verify(encoded, password, password_len, type);
@@ -285,7 +284,8 @@ PHP_FUNCTION(argon2_get_info)
 	} else if (strstr(hash, "argon2i")) {
 		algo = "argon2i";
 	} else {
-		zend_throw_exception(spl_ce_InvalidArgumentException, "Invalid Argon2 hash", 0 TSRMLS_CC);
+		php_error_docref(NULL, E_WARNING, "Invalid Argon2 hash");
+		RETURN_FALSE;
 	}
 
 	array_init(&options);
