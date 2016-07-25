@@ -132,6 +132,7 @@ PHP_FUNCTION(argon2_hash)
 
 	if (m_cost > ARGON2_MAX_MEMORY || m_cost == 0) {
 		zend_throw_exception(spl_ce_InvalidArgumentException, "Memory cost is not valid", 0 TSRMLS_CC);
+		RETURN_FALSE;
 	}
 
 	// Determine the t_cost if it was passed via options
@@ -141,6 +142,7 @@ PHP_FUNCTION(argon2_hash)
 
 	if (t_cost > ARGON2_MAX_TIME || t_cost == 0) {
 		zend_throw_exception(spl_ce_InvalidArgumentException, "Time cost is not valid", 0 TSRMLS_CC);
+		RETURN_FALSE;
 	}
 	
 	// Determine the parallelism degree if it was passed via options
@@ -150,6 +152,7 @@ PHP_FUNCTION(argon2_hash)
 
 	if (threads > ARGON2_MAX_LANES || threads == 0) {
 		zend_throw_exception(spl_ce_InvalidArgumentException, "Number of threads is not valid", 0 TSRMLS_CC);
+		RETURN_FALSE;
 	}
 
 	lanes = threads;
