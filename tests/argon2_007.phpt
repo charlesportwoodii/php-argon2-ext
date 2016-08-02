@@ -3,19 +3,19 @@ Tests Argon2 exceptions
 --FILE--
 <?php
 try {
-    $hash = argon2_hash('test', ARGON2_PASSWORD, ['m_cost' => 0]);
+    $hash = argon2_hash('test', HASH_ARGON2, ['m_cost' => 0]);
 } catch (InvalidArgumentException $e) {
     var_dump($e->getMessage());
 }
 
 try {
-    $hash = argon2_hash('test', ARGON2_PASSWORD, ['t_cost' => 0]);
+    $hash = argon2_hash('test', HASH_ARGON2, ['t_cost' => 0]);
 } catch (InvalidArgumentException $e) {
     var_dump($e->getMessage());
 }
 
 try {
-    $hash = argon2_hash('test', ARGON2_PASSWORD, ['threads' => 0]);
+    $hash = argon2_hash('test', HASH_ARGON2, ['threads' => 0]);
 } catch (InvalidArgumentException $e) {
     var_dump($e->getMessage());
 }

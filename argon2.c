@@ -102,7 +102,7 @@ PHP_FUNCTION(argon2_hash)
 	uint32_t threads = ARGON2_THREADS;
 	uint32_t lanes;
 	uint32_t out_len = 32;
-	argon2_type type = EXT_PASSWORD_ARGON2I;
+	argon2_type type = EXT_HASH_ARGON2I;
 
 	size_t salt_len = 16;
 	size_t password_len;
@@ -163,10 +163,10 @@ PHP_FUNCTION(argon2_hash)
 	}
 	
 	// Determine the Algorithm type
-	if (argon2_type == EXT_PASSWORD_ARGON2I || argon2_type == -1) {
-		type = EXT_PASSWORD_ARGON2I;
-	} else if (argon2_type == EXT_PASSWORD_ARGON2D) {
-		type = EXT_PASSWORD_ARGON2D;
+	if (argon2_type == EXT_HASH_ARGON2I || argon2_type == -1) {
+		type = EXT_HASH_ARGON2I;
+	} else if (argon2_type == EXT_HASH_ARGON2D) {
+		type = EXT_HASH_ARGON2D;
 	} else {
 		zend_throw_exception(spl_ce_InvalidArgumentException, "Algorithm must be one of `PASSWORD_ARGON2_D, PASSWORD_ARGON2_I`", 0 TSRMLS_CC);
 	}
@@ -232,7 +232,7 @@ Generates an argon2 hash */
 PHP_FUNCTION(argon2_verify)
 {
 	// Argon2 Options
-	argon2_type type = EXT_PASSWORD_ARGON2I; 	// Default to Argon2_i
+	argon2_type type = EXT_HASH_ARGON2I; 	// Default to Argon2_i
 
 	size_t password_len;
 	size_t encoded_len;
@@ -249,9 +249,9 @@ PHP_FUNCTION(argon2_verify)
  
 	// Determine which algorithm is used
 	if (strstr(encoded, "argon2d")) {
-		type = EXT_PASSWORD_ARGON2D;
+		type = EXT_HASH_ARGON2D;
 	} else if (strstr(encoded, "argon2i")) {
-		type = EXT_PASSWORD_ARGON2I;
+		type = EXT_HASH_ARGON2I;
 	} else {
 		php_error_docref(NULL, E_WARNING, "Invalid Argon2 hash");
 		RETURN_FALSE;
@@ -325,9 +325,9 @@ const zend_function_entry argon2_functions[] = {
 PHP_MINIT_FUNCTION(argon2)
 {
 	// Create contants for Argon2
-	REGISTER_LONG_CONSTANT("ARGON2D_PASSWORD", EXT_PASSWORD_ARGON2D, CONST_CS | CONST_PERSISTENT);
-	REGISTER_LONG_CONSTANT("ARGON2I_PASSWORD", EXT_PASSWORD_ARGON2I, CONST_CS | CONST_PERSISTENT);
-	REGISTER_LONG_CONSTANT("ARGON2_PASSWORD", EXT_PASSWORD_ARGON2, CONST_CS | CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("HASH_ARGON2D", EXT_HASH_ARGON2D, CONST_CS | CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("HASH_ARGON2I", EXT_HASH_ARGON2I, CONST_CS | CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("HASH_ARGON2", EXT_HASH_ARGON2, CONST_CS | CONST_PERSISTENT);
 
 	return SUCCESS;
 }

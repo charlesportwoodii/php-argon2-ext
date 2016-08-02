@@ -3,7 +3,7 @@ Verifies argon2_get_info returns correct data
 --FILE--
 <?php
 var_dump(argon2_get_info(argon2_hash('test')));
-var_dump(argon2_get_info(argon2_hash('test', ARGON2D_PASSWORD, [
+var_dump(argon2_get_info(argon2_hash('test', HASH_ARGON2D, [
     'm_cost' => 1<<15,
     't_cost' => 4,
     'threads' => 2
