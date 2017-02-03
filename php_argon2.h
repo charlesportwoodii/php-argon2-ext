@@ -8,7 +8,8 @@
 
 #define EXT_HASH_ARGON2I    Argon2_i
 #define EXT_HASH_ARGON2D    Argon2_d
-#define EXT_HASH_ARGON2     EXT_HASH_ARGON2I
+#define EXT_HASH_ARGON2ID   Argon2_id
+#define EXT_HASH_ARGON2     EXT_HASH_ARGON2ID
 #define ARGON2_MEMORY_COST 1<<16
 #define ARGON2_TIME_COST 3
 #define ARGON2_THREADS 1

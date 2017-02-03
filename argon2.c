@@ -102,7 +102,7 @@ PHP_FUNCTION(argon2_hash)
 	uint32_t threads = ARGON2_THREADS;
 	uint32_t lanes;
 	uint32_t out_len = 32;
-	argon2_type type = EXT_HASH_ARGON2I;
+	argon2_type type = EXT_HASH_ARGON2ID;
 
 	size_t salt_len = 16;
 	size_t password_len;
@@ -163,12 +163,14 @@ PHP_FUNCTION(argon2_hash)
 	}
 	
 	// Determine the Algorithm type
-	if (argon2_type == EXT_HASH_ARGON2I || argon2_type == -1) {
+	if (argon2_type == EXT_HASH_ARGON2ID || argon2_type == -1) {
+		type = EXT_HASH_ARGON2ID;
+	} else if (argon2_type == EXT_HASH_ARGON2I) {
 		type = EXT_HASH_ARGON2I;
-	} else if (argon2_type == EXT_HASH_ARGON2D) {
+	}else if (argon2_type == EXT_HASH_ARGON2D) {
 		type = EXT_HASH_ARGON2D;
 	} else {
-		zend_throw_exception(spl_ce_InvalidArgumentException, "Algorithm must be one of `PASSWORD_ARGON2_D, PASSWORD_ARGON2_I`", 0 TSRMLS_CC);
+		zend_throw_exception(spl_ce_InvalidArgumentException, "Algorithm must be one of `HASH_ARGON2ID, HASH_ARGON2I, HASH_ARGON2D`", 0 TSRMLS_CC);
 	}
 
 	salt = emalloc(salt_len + 1);
@@ -186,7 +188,8 @@ PHP_FUNCTION(argon2_hash)
 		m_cost,
 		threads,
 		(uint32_t)salt_len,
-		out_len
+		out_len,
+		type
 	);
 
 	// Allocate the size of encoded, and out
@@ -232,7 +235,7 @@ Generates an argon2 hash */
 PHP_FUNCTION(argon2_verify)
 {
 	// Argon2 Options
-	argon2_type type = EXT_HASH_ARGON2I; 	// Default to Argon2_i
+	argon2_type type = EXT_HASH_ARGON2ID; 	// Default to Argon2_id
 
 	size_t password_len;
 	size_t encoded_len;
@@ -248,7 +251,9 @@ PHP_FUNCTION(argon2_verify)
 	ZEND_PARSE_PARAMETERS_END();
  
 	// Determine which algorithm is used
-	if (strstr(encoded, "argon2d")) {
+	if (strstr(encoded, "argon2id")) {
+		type = EXT_HASH_ARGON2ID;
+	} else if (strstr(encoded, "argon2d")) {
 		type = EXT_HASH_ARGON2D;
 	} else if (strstr(encoded, "argon2i")) {
 		type = EXT_HASH_ARGON2I;
@@ -282,7 +287,9 @@ PHP_FUNCTION(argon2_get_info)
 		Z_PARAM_STRING(hash, hash_len)
 	ZEND_PARSE_PARAMETERS_END();
 
-	if (strstr(hash, "argon2d")) {
+	if (strstr(hash, "argon2id")) {
+		algo = "argon2id";
+	} else if (strstr(hash, "argon2d")) {
 		algo = "argon2d";
 	} else if (strstr(hash, "argon2i")) {
 		algo = "argon2i";
@@ -327,6 +334,7 @@ PHP_MINIT_FUNCTION(argon2)
 	// Create contants for Argon2
 	REGISTER_LONG_CONSTANT("HASH_ARGON2D", EXT_HASH_ARGON2D, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("HASH_ARGON2I", EXT_HASH_ARGON2I, CONST_CS | CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("HASH_ARGON2ID", EXT_HASH_ARGON2ID, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("HASH_ARGON2", EXT_HASH_ARGON2, CONST_CS | CONST_PERSISTENT);
 
 	return SUCCESS;
