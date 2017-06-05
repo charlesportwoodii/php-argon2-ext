@@ -17,6 +17,7 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_argon2_hash, 0, 0, 3)
 	ZEND_ARG_INFO(0, password)
 	ZEND_ARG_INFO(0, algorithm)
 	ZEND_ARG_INFO(0, options)
+	ZEND_ARG_INFO(0, raw)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_argon2_verify, 0, 0, 2)
@@ -115,14 +116,17 @@ PHP_FUNCTION(argon2_hash)
 	int result;
 	long argon2_type = -1;
 
+	zend_bool raw = 0;
+
 	zval *option_buffer;
 	HashTable *options = 0;
 
-	ZEND_PARSE_PARAMETERS_START(1, 3)
+	ZEND_PARSE_PARAMETERS_START(1, 4)
 		Z_PARAM_STRING(password, password_len)
 		Z_PARAM_OPTIONAL
 		Z_PARAM_LONG(argon2_type)
-		Z_PARAM_ARRAY_HT(options);
+		Z_PARAM_ARRAY_HT(options)
+		Z_PARAM_BOOL(raw);
 	ZEND_PARSE_PARAMETERS_END();
 
 	// Determine the m_cost if it was passed via options
@@ -155,6 +159,7 @@ PHP_FUNCTION(argon2_hash)
 		RETURN_FALSE;
 	}
 
+
 	lanes = threads;
 
 	// Sanity check the password for non-zero length
@@ -167,7 +172,7 @@ PHP_FUNCTION(argon2_hash)
 		type = EXT_HASH_ARGON2ID;
 	} else if (argon2_type == EXT_HASH_ARGON2I) {
 		type = EXT_HASH_ARGON2I;
-	}else if (argon2_type == EXT_HASH_ARGON2D) {
+	} else if (argon2_type == EXT_HASH_ARGON2D) {
 		type = EXT_HASH_ARGON2D;
 	} else {
 		zend_throw_exception(spl_ce_InvalidArgumentException, "Algorithm must be one of `HASH_ARGON2ID, HASH_ARGON2I, HASH_ARGON2D`", 0 TSRMLS_CC);
@@ -214,19 +219,23 @@ PHP_FUNCTION(argon2_hash)
 	);
 
 	// Free allocated memory
-	efree(out);
 	efree(salt);
-	efree(encoded);
-
+	
 	// If the hash wasn't generated, throw an exception
 	if (result != ARGON2_OK) {
 		efree(encoded);
+		efree(out);
 		php_error_docref(NULL, E_WARNING, argon2_error_message(result));
 		RETURN_FALSE;
 	}
 		
-	// Return the generated encoded string
-	RETURN_STR(encoded);
+	if (raw == 0) {
+		efree(out);
+		RETURN_STR(encoded);
+	} else {
+		efree(encoded);
+		RETURN_STR(out);
+	}
 }
 /* }}} */
 
