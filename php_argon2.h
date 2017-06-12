@@ -4,7 +4,7 @@
 #define argon2_module_ptr &argon2_module_entry
 #define phpext_argon2_ptr argon2_module_ptr
 
-#define PHP_ARGON2_VERSION "1.2.0"
+#define PHP_ARGON2_VERSION "1.2.1"
 
 #define EXT_HASH_ARGON2I    Argon2_i
 #define EXT_HASH_ARGON2D    Argon2_d
