@@ -133,4 +133,8 @@ array(2) {
 
 ## License
 
-BSD-3-Clause. See [LICENSE.md](LICENSE.md) for more details.
+BSD-3-Clause. See [LICENSE](LICENSE) for more details.
+
+PHP functions `php_password_make_salt` and `salt_to_base64` are licensed under the PHP License. See http://www.php.net/license/3_01.txt.
+
+> This product includes PHP software, freely available from <http://www.php.net/software/>
