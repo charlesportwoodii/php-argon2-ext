@@ -84,7 +84,7 @@ options = [
 
 > This function follows the same design principles of `password_hash()`, in that a salt will be generated on your behalf. This method does not provide you with a way to provide your own salt. The salt generated uses the native PHP function `php_password_make_salt`, which is the same method used to generate salts for `password_hash()`.
 
-The `$algorithm` can be changed by passing in either `HASH_ARGON2I` or `HASH_ARGON2D`. If the algorithm is invalid, an `InvalidArguementException` will be raised.
+The `$algorithm` can be changed by passing in either `HASH_ARGON2ID`, `HASH_ARGON2I` or `HASH_ARGON2D`. If the algorithm is invalid, an `InvalidArguementException` will be raised.
 
 This library allows you to specify an array of options to tune Argon2 to your system. The available options for the `$options` array, and their defaults are defined above. Argon2 has several tolerances in place for each of these values. If the value falls outside those tolerances, and `InvalidArguementException` will be raised.
 
