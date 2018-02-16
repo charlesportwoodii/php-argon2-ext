@@ -15,7 +15,7 @@ notifications:
     on_failure: change
 
 script:
-  - cd ext/argon2 && CFLAGS="-fPIC" make && make test && rm libargon2.so && cd ../..
+  - cd ext/argon2 && CFLAGS="-fPIC" make -j1 OPTTARGET=i686 && make test && rm libargon2.so && cd ../..
   - phpize
   - ./configure --with-argon2
   - NO_INTERACTION=true make test

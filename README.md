@@ -17,7 +17,7 @@ cd php-argon2-ext
 
 # Build the Argon2 library
 cd ext/argon2
-CFLAGS="-fPIC" make
+CFLAGS="-fPIC" make -j1 OPTTARGET=i686
 make test
 
 # Remove the argon2 shared library to force Argon2 to be compiled statically into the extension
